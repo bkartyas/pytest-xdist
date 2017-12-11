@@ -1,11 +1,13 @@
 import py
 import pytest
+import pprint
 
 from xdist.slavemanage import NodeManager
 from xdist.scheduler import (
     EachScheduling,
     LoadScheduling,
     LoadScopeScheduling,
+    TopologyScheduling,
 )
 
 
@@ -99,6 +101,7 @@ class DSession:
             'each': EachScheduling,
             'load': LoadScheduling,
             'loadscope': LoadScopeScheduling,
+            'topologyscope': TopologyScheduling
         }
         return schedulers[dist](config, log)
 
@@ -210,6 +213,7 @@ class DSession:
         scheduler to schedule the collected items.  When initiating
         scheduling the first time it logs which scheduler is in use.
         """
+        pprint.pprint(ids)
         if self.shuttingdown:
             return
         self.config.hook.pytest_xdist_node_collection_finished(node=node,

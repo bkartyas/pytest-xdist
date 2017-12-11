@@ -11,6 +11,7 @@ import os
 import time
 import pytest
 
+import pprint
 
 class SlaveInteractor:
     def __init__(self, config, channel):
@@ -85,10 +86,22 @@ class SlaveInteractor:
                        duration=duration)
 
     def pytest_collection_finish(self, session):
+        ids = []
+        for item in session.items:
+            nodeid = item.nodeid
+            topology = ''
+
+            for fixturename in item.fixturenames:
+                if fixturename.startswith('config_'):
+                    topology = fixturename
+                    break
+
+            ids.append(topology + '::' + nodeid)
+
         self.sendevent(
             "collectionfinish",
             topdir=str(session.fspath),
-            ids=[item.nodeid for item in session.items])
+            ids=ids)
 
     def pytest_runtest_logstart(self, nodeid, location):
         self.sendevent("logstart", nodeid=nodeid, location=location)
@@ -111,18 +124,18 @@ class SlaveInteractor:
 
 def serialize_report(rep):
     def disassembled_report(rep):
-        reprtraceback = rep.longrepr.reprtraceback.__dict__.copy()
-        reprcrash = rep.longrepr.reprcrash.__dict__.copy()
+        reprtraceback = rep.longrepr.reprtraceback.__dict__
+        reprcrash = rep.longrepr.reprcrash.__dict__
 
         new_entries = []
         for entry in reprtraceback['reprentries']:
             entry_data = {
                 'type': type(entry).__name__,
-                'data': entry.__dict__.copy(),
+                'data': entry.__dict__,
             }
             for key, value in entry_data['data'].items():
                 if hasattr(value, '__dict__'):
-                    entry_data['data'][key] = value.__dict__.copy()
+                    entry_data['data'][key] = value.__dict__
             new_entries.append(entry_data)
 
         reprtraceback['reprentries'] = new_entries
